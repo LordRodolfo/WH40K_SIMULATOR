@@ -6,10 +6,10 @@
     <title>Simulador WH40k - Montecarlo</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM (UMD Stable) -->
+    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- PropTypes (Requerido por Recharts) -->
+    <!-- PropTypes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
     <!-- Recharts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
@@ -301,51 +301,146 @@
 
                     let report = "";
 
-                    // 4 Frases basadas en percentiles (0-25, 25-50, 50-75, 75-100)
+                    // Diccionario de personalidades por facción y percentil (<25, 25-50, 50-75, >75)
+                    const factionDict = {
+                        "Orkos": {
+                            low: `¡PULGARES ABAJO, XIKOS! ¿Un miserable ${probKillOne.toFixed(1)}% de probabilidad? ¡Hasta un Gretchin kon catarro pega más fuerte! Daño medio de ${avgDmg}. ¡El Kaudillo los va a hacer puré por pensar en un ataque tan penoso! ¡A korrer!`,
+                            midLow: `Mmh... un ${probKillOne.toFixed(1)}% de que kaiga uno. Con ${avgDmg} de daño, es una apuesta arriesgada. Si la suerte nos acompaña, rompemos algo; si no, quedaremos komo idiotas. ¡Griten más fuerte antes de tirar los dados!`,
+                            midHigh: `¡A HIIIIJOS DE GORKO! ¡Tenemos un ${probKillOne.toFixed(1)}% de asegurar bajas! Con un promedio de ${avgDmg} de daño, el ${target} va a kantar victoria tarde. ¡Hasta ${maxKills} modelos pueden caer si nos ponemos violentos! ¡WAAAGH!`,
+                            high: `¡ESTO ES UNA MASACRE! ¡${probKillOne.toFixed(1)}% de probabilidad de destrozar al ${target}! ¡${avgDmg} de daño medio y hasta ${maxKills} bajas seguras! ¡Nadie sobrevive a esta paliza, xikos!`
+                        },
+                        "Necrones": {
+                            low: `[ALERTA DE INCOMPETENCIA]: Una probabilidad del ${probKillOne.toFixed(1)}% es un insulto a las Dinastías. Daño medio de ${avgDmg}. Sus engramas están oxidados; este sector entero debería ser desintegrado por la vergüenza de su cálculo.`,
+                            midLow: `Eficiencia subóptima. El ${probKillOne.toFixed(1)}% de probabilidad de baja indica resistencia imprevista del objetivo ${target}. Con ${avgDmg} de daño, es una pérdida de tiempo gauss.`,
+                            midHigh: `Parámetros favorables. Un ${probKillOne.toFixed(1)}% de probabilidad de aniquilación y ${avgDmg} de daño garantizan que los protocolos de desintegración harán su trabajo sobre el ${target}.`,
+                            high: `[EJECUCIÓN TOTAL]: Probabilidad del ${probKillOne.toFixed(1)}% de bajas. Daño medio destructivo de ${avgDmg}. El objetivo ${target} cesará de manera eficiente y absoluta bajo nuestro avance.`
+                        },
+                        "Adeptus Astartes": {
+                            low: `¡Deshonra para el Capítulo! Con un escaso ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño medio, este asalto es un despropósito. El primarca lloraría al ver semejante flaqueza en el bólter. Reorganicen la línea.`,
+                            midLow: `Las probabilidades no son favorables: ${probKillOne.toFixed(1)}% de certeza de baja y ${avgDmg} de daño medio. Proceder requiere fe ciega, pues el enemigo ${target} resistirá gran parte de la embestida.`,
+                            midHigh: `Excelente desempeño táctico. Con un ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} puntos de daño, purgarán al ${target} tal como fue ordenado. Hasta ${maxKills} bajas. Por el Emperador.`,
+                            high: `¡La ira del Capítulo es implacable! ${probKillOne.toFixed(1)}% de probabilidad de aniquilación total y ${avgDmg} de daño medio. El ${target} será barrido de la faz del planeta. ¡Gloria al Imperio!`
+                        },
+                        "Tiránidos": {
+                            low: `[Error Sináptico]: Biomasa recolectable insignificante (${probKillOne.toFixed(1)}% de éxito, ${avgDmg} daño). La Mente Enjambre rechaza este ataque por ineficiente. Desvíen el enjambre hacia presas más débiles.`,
+                            midLow: `Resistencia tenaz detectada en ${target}. Eficacia de depredación del ${probKillOne.toFixed(1)}%. El daño proyectado (${avgDmg}) apenas rasguña la armadura enemiga. Se requiere adaptación.`,
+                            midHigh: `Oleja de asalto lista. ${probKillOne.toFixed(1)}% de probabilidad de quiebre defensivo y ${avgDmg} de daño medio. Las fauces del enjambre desgarrarán al ${target} sin piedad.`,
+                            high: `[Consumo Inminente]: ${probKillOne.toFixed(1)}% de probabilidad de aniquilación. Daño masivo de ${avgDmg}. La biomasa del ${target} será despojada hasta el último átomo. Adaptar, superar, devorar.`
+                        },
+                        "Adepta Sororitas": {
+                            low: `¡Falta de fe! Un ${probKillOne.toFixed(1)}% de probabilidad y ${avgDmg} de daño demuestran tibieza en vuestras plegarias. ¡El bólter sagrado no disparará milagros sin una devoción auténtica!`,
+                            midLow: `Las llamas de la fe titilan ante el ${target} (${probKillOne.toFixed(1)}% de éxito, ${avgDmg} daño). El martirio acecha si persisten en una ofensiva tan frágil.`,
+                            midHigh: `¡El fuego purificador arde con fuerza! Con un ${probKillOne.toFixed(1)}% de probabilidad y ${avgDmg} de daño, las llamas del Emperador diezmarán las filas del ${target}.`,
+                            high: `¡Milagro de combate! ${probKillOne.toFixed(1)}% de certeza de purga total con ${avgDmg} de daño sagrado. El enemigo arderá en la gloria de la Ekklesiarquía.`
+                        },
+                        "Adeptus Custodes": {
+                            low: `Inaceptable para la Guardia del Trono. Un ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño menosprecian el oro de nuestra armadura. No mancharemos nuestras lanzas en vano.`,
+                            midLow: `El objetivo ${target} demuestra una resiliencia inusual. Con ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño, la guardia debe evaluar si el esfuerzo merece la sangre de la élite.`,
+                            midHigh: `Perfección marcial en marcha. ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. Las lanzas guardianas abrirán paso entre las defensas del ${target}.`,
+                            high: `La voluntad del Emperador se ejecuta sin fallos. ${probKillOne.toFixed(1)}% de probabilidad de aniquilación absoluta y ${avgDmg} de daño. El ${target} caerá como paja ante la hoja de los Custodios.`
+                        },
+                        "Adeptus Mechanicus": {
+                            low: `[Error 404 - Lógica Inválida]: Probabilidad de éxito del ${probKillOne.toFixed(1)}%. Salida de daño de ${avgDmg}. Los sagrados cánticos binarios desaprueban este cálculo ineficiente. Ajusten los servo-brazos.`,
+                            midLow: `Resistencia del objetivo fuera de los parámetros óptimos (${probKillOne.toFixed(1)}% de éxito, ${avgDmg} daño). La Omnissiah aconseja recalibrar los algoritmos balísticos antes de disparar.`,
+                            midHigh: `[Bendición del Dios Máquina]: ${probKillOne.toFixed(1)}% de probabilidad de éxito balístico, ${avgDmg} daño neto. Las líneas de fuego de los Skitarii desintegrarán al ${target}.`,
+                            high: `[Cálculo Divino Absoluto]: Eficiencia del ${probKillOne.toFixed(1)}%, daño medio ${avgDmg}. La ira de la Omnissiah se manifestará en una obsolescencia forzada instantánea para el ${target}.`
+                        },
+                        "Astra Militarum": {
+                            low: `¡Soldado, qué es esa porquería de ataque! ¡${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño! ¡La carne es prescindible, pero gastar munición del Emperador en vano es un delito castigado con ejecución!`,
+                            midLow: `Las estadísticas del Regimiento no son prometedoras: ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño. Preparen las bayonetas, porque el enemigo sobrevivirá al cañón.`,
+                            midHigh: `¡Fuego a discreción! ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} de daño medio. Las filas del ${target} temblarán bajo el peso de nuestra artillería masiva.`,
+                            high: `¡Descarga general coordinada! ${probKillOne.toFixed(1)}% de probabilidad de aniquilación y ${avgDmg} de daño demoledor. El ${target} quedará reducido a cráteres humeantes.`
+                        },
+                        "Caballeros del Caos": {
+                            low: `¡Cobardes vinculados a la disformidad! Un ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño dan vergüenza a los Dioses Oscuros. ¡Merecéis ser transformados en cráneos parlantes!`,
+                            midLow: `El favor de los Dioses es voluble hoy: ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño. El ${target} resiste con fastidiosa obstinación.`,
+                            midHigh: `¡La Disformidad sonríe! ${probKillOne.toFixed(1)}% de probabilidad de destrucción y ${avgDmg} de daño medio. Los titanes del Caos pisotearán sin piedad al ${target}.`,
+                            high: `¡Matanza gloriosa para los Poderes Ruinosos! ${probKillOne.toFixed(1)}% de certeza de aniquilación, ${avgDmg} de daño catastrófico. El ${target} sufrirá el terror absoluto.`
+                        },
+                        "Caballeros Grises": {
+                            low: `La disformidad susurra dudas: ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño. Un asalto tan débil no logrará penetrar la corrupción del ${target}. Canalicen más psique.`,
+                            midLow: `Resistencia psíquica detectada. Con ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño, el enemigo pondrá a prueba la pureza de nuestras hojas némesis.`,
+                            midHigh: `Golpe psíquico certero: ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} de daño medio. Desterradores listos para purgar al ${target} de la existencia.`,
+                            high: `¡Fuerza de Aegis total! ${probKillOne.toFixed(1)}% de probabilidad de aniquilación y ${avgDmg} de daño. El ${target} será borrado por la voluntad combinada de los Caballeros Grises.`
+                        },
+                        "Caballeros Imperiales": {
+                            low: `Un noble deshonor: ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño. Las grandes armas de la Casa no deben desperdiciarse en blancos tan esquivos.`,
+                            midLow: `El trono de los Caballeros registra resistencia en el ${target} (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Ajusten los cañones termales para asegurar el honor.`,
+                            midHigh: `¡Paso de titán autorizado! ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. Las armaduras ancestrales aplastarán al ${target}.`,
+                            high: `¡Juicio de la Caballería! ${probKillOne.toFixed(1)}% de certeza destructiva, ${avgDmg} de daño devastador. El ${target} no es más que polvo bajo nuestros pies de hierro.`
+                        },
+                        "Cultos Genestealer": {
+                            low: `Hermanos de la Broca, el cálculo falla (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Si atacamos ahora alertaremos al Patriarca en vano. Manteneos en las sombras.`,
+                            midLow: `Amboscuada con riesgo: ${probKillOne.toFixed(1)}% de probabilidad de éxito, ${avgDmg} de daño. El ${target} podría sobrevivir y descubrir nuestras redes subterráneas.`,
+                            midHigh: `¡Por el Gran Pastor Estelar! ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño. Las sombras vomitarán insurgentes sobre el ${target}.`,
+                            high: `¡El Levantamiento ha llegado! ${probKillOne.toFixed(1)}% de probabilidad de masacre total, ${avgDmg} de daño. El ${target} caerá desde adentro en una marea de fervor xenomorfo.`
+                        },
+                        "Demonios del Caos": {
+                            low: `¡Insulsos mortales! Un ${probKillOne.toFixed(1)}% de probabilidad y ${avgDmg} de daño apenas alimentan el apetito del Caos. ¡Merecéis volver al Warp disueltos en pena!`,
+                            midLow: `Las corrientes disformes fluyen débiles: ${probKillOne.toFixed(1)}% de éxito, ${avgDmg} de daño. El ${target} mantiene su cordura ante nuestra manifestación.`,
+                            midHigh: `¡Garras y colmillos disformes! ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. La locura se cernirá sobre las líneas del ${target}.`,
+                            high: `¡Marea demoníaca desatada! ${probKillOne.toFixed(1)}% de certeza destructiva, ${avgDmg} de daño abismal. El ${target} será devorado en cuerpo y alma por la Disformidad.`
+                        },
+                        "Devoradores de Mundos": {
+                            low: `¡SANGRE PARA EL DIOS DE LA SANGRE! ...pero con ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} daño nos da risa. ¡Más les vale gritar más fuerte o el Clavos de Carnicería os matará antes!`,
+                            midLow: `La masacre se atasca: ${probKillOne.toFixed(1)}% de probabilidad de éxito, ${avgDmg} de daño. El ${target} se niega a desangrarse con la velocidad requerida.`,
+                            midHigh: `¡A POR SUS CRÁNEOS! ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. Las hachas carniceras abrirán en canal al ${target}.`,
+                            high: `¡MASACRE ABSOLUTA! ${probKillOne.toFixed(1)}% de probabilidad de destrucción total, ${avgDmg} de daño letal. ¡SKULLS FOR THE SKULL THRONE! ¡El ${target} es carne muerta!`
+                        },
+                        "Drukhari": {
+                            low: `Qué aburrimiento... Un ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño. Esto no generará suficiente dolor ni agonía para alimentar a Commorragh. Busquemos otra víctima.`,
+                            midLow: `Presa escurridiza detectada (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Las espinas venenosas del ${target} podrían arruinar nuestros Raiders si fallamos.`,
+                            midHigh: `¡Redadas de dolor exitosas! ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. Los colmaderos de Commorragh disfrutarán la agonía del ${target}.`,
+                            high: `¡Cosecha de almas perfecta! ${probKillOne.toFixed(1)}% de probabilidad de destrucción, ${avgDmg} de daño atroz. El ${target} deseará no haber nacido jamás.`
+                        },
+                        "Eldar (Aeldari)": {
+                            low: `Los hilos del Fata revelan un futuro sombrío: ${probKillOne.toFixed(1)}% de éxito, ${avgDmg} de daño. Este camino conduce a nuestra propia ruina; evítenlo.`,
+                            midLow: `El tapiz temporal muestra resistencia en el ${target} (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Cada baja costará más de lo previsto por los videntes.`,
+                            midHigh: `Predicción favorable de los Caminos: ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. La gracia y velocidad aeldari superarán al ${target}.`,
+                            high: `[Triunfo del Vidente]: ${probKillOne.toFixed(1)}% de probabilidad de aniquilación impecable, ${avgDmg} de daño letal. El ${target} caerá antes de comprender su propio destino.`
+                        },
+                        "Guardia de la Muerte": {
+                            low: `La pestilencia fluye lenta y débil (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). El abuelo Nurgle os pide más paciencia y corrupción para pudrir al ${target}.`,
+                            midLow: `El ciclo de descomposición tropieza: ${probKillOne.toFixed(1)}% de probabilidad de baja, ${avgDmg} de daño. Las bendiciones de Nurgle tardarán en hacer efecto en el ${target}.`,
+                            midHigh: `La marcha implacable avanza: ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} de daño medio. Las toxinas erosionarán la armadura del ${target}.`,
+                            high: `¡Gloriosa putrefacción! ${probKillOne.toFixed(1)}% de probabilidad de destrucción total, ${avgDmg} de daño tóxico letal. El ${target} se disolverá en fango bendito por Nurgle.`
+                        },
+                        "Imperio T'au": {
+                            low: `[Análisis T'au - Subóptimo]: Probabilidad de éxito del ${probKillOne.toFixed(1)}%, daño medio ${avgDmg}. El Bien Supremo no se alcanza arriesgando recursos en ataques de baja rentabilidad estadística.`,
+                            midLow: `Resistencia enemiga alta detectada por los sensores (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Se recomienda reposicionar los marcadores lumínicos antes de abrir fuego.`,
+                            midHigh: `[Fuego Concentrado Autorizado]: ${probKillOne.toFixed(1)}% de probabilidad de baja, ${avgDmg} de daño medio. Las castas de fuego desintegrarán al ${target} con precisión matemática.`,
+                            high: `[Superioridad del Bien Supremo]: ${probKillOne.toFixed(1)}% de probabilidad de aniquilación total, ${avgDmg} de daño perfecto. El ${target} sucumbirá ante la doctrina óptima T'au.`
+                        },
+                        "Ligas de Votann": {
+                            low: `¡Eso va directo al Gran Libro de los Rencores! ${probKillOne.toFixed(1)}% de éxito, ${avgDmg} de daño. ¡Imbéciles, con esos números el ${target} se está riendo de nuestra barbas!`,
+                            midLow: `Cálculo de clan poco rentable (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Los ancestros no están complacidos con la baja calidad de esta emboscada kin.`,
+                            midHigh: `¡Por los Ancestros! ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio. La tecnología de los Votann perforará las defensas del ${target}.`,
+                            high: `¡Sentencia de Rencor ejecutada! ${probKillOne.toFixed(1)}% de probabilidad de destrucción absoluta, ${avgDmg} de daño masivo. El ${target} ha pagado su deuda con sangre kin.`
+                        },
+                        "Marines Espaciales del Caos": {
+                            low: `¡Patéticos esclavos de la ruina! Un ${probKillOne.toFixed(1)}% de éxito y ${avgDmg} de daño demuestran que habéis perdido el favor del Caos. ¡Merecéis morir a manos del enemigo!`,
+                            midLow: `Fuerza de choque comprometida: ${probKillOne.toFixed(1)}% de probabilidad de baja, ${avgDmg} de daño. El ${target} resiste con fastidiosa obstinación leal.`,
+                            midHigh: `¡Por el Señor de la Guerra! ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} de daño medio. Romperemos las líneas del ${target} sin contemplaciones.`,
+                            high: `¡Dominio total de la Herejía! ${probKillOne.toFixed(1)}% de probabilidad de masacre absoluta, ${avgDmg} de daño letal. El ${target} sufrirá la furia de los veteranos del Ojo.`
+                        },
+                        "Mil Hijos": {
+                            low: `[Cálculo Arcano Fallido]: Una probabilidad del ${probKillOne.toFixed(1)}% y ${avgDmg} de daño muestran un flujo disforme errático. Tzeentch se burla de vuestra escasa magia.`,
+                            midLow: `Resistencia mental del ${target} elevada (${probKillOne.toFixed(1)}% éxito, ${avgDmg} daño). Los Rubricae requieren un ritual psíquico más potente para surtir efecto.`,
+                            midHigh: `[Hechizo de Destrucción]: ${probKillOne.toFixed(1)}% de probabilidad de éxito, ${avgDmg} de daño medio. Las llamas mutágenas envolverán por completo al ${target}.`,
+                            high: `[Dominio del Mutruo Tzeentchiano]: ${probKillOne.toFixed(1)}% de probabilidad de aniquilación mágica, ${avgDmg} de daño abrumador. La realidad del ${target} se desvanecerá en cenizas.`
+                        }
+                    };
+
+                    // Seleccionar según el percentil de probabilidad de baja (0-25, 25-50, 50-75, 75-100)
+                    const currentFactionObj = factionDict[faction] || factionDict["Necrones"];
                     if (probKillOne < 25) {
-                        // REPRIMIENDA TOTAL (< 25%)
-                        if (faction === "Orkos") {
-                            report = `¡PULGARES ABAJO, XIKOS! ¿ ${probKillOne.toFixed(1)}% de probabilidad de matar algo? ¡Hasta un Gretchin kon catarro pega más fuerte! Nos da un miserable daño medio de ${avgDmg}. ¡El Kaudillo los va a hacer puré por pensar en un ataque tan penoso! ¡Busco otro objetivo o a korrer!`;
-                        } else if (faction === "Necrones") {
-                            report = `[ALERTA DE INCOMPETENCIA]: Una probabilidad de éxito del ${probKillOne.toFixed(1)}% es un insulto a las Dinastías Silentes. Daño medio de ${avgDmg}. Sus engramas están tan oxidados que dan lástima; este subsector entero debería ser desintegrado por la vergüenza de su cálculo táctico.`;
-                        } else if (faction === "Adeptus Astartes") {
-                            report = `¡Deshonra para el Capítulo! Con un escaso ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} de daño medio, este asalto es un absoluto despropósito táctico. El primarca lloraría al ver semejante flaqueza en el bolter. Reorganicen la línea de fuego de inmediato.`;
-                        } else {
-                            report = `[REPRIMIENDA TÁCTICA]: Operación inviable. La probabilidad de eliminar al menos un modelo es de apenas un ${probKillOne.toFixed(1)}% (${avgDmg} daño medio). Enviar a estas tropas es un desperdicio de recursos bélicos imperdonable. Aborten el ataque.`;
-                        }
+                        report = currentFactionObj.low;
                     } else if (probKillOne >= 25 && probKillOne < 50) {
-                        // ADVERTENCIA / RIESGO MODERADO-BAJO (25% - 50%)
-                        if (faction === "Orkos") {
-                            report = `Mmh... un ${probKillOne.toFixed(1)}% de que kaiga al menos uno. Con ${avgDmg} de daño promedio, es una apuesta arriesgada. Si la suerte nos acompaña, rompemos algo; si no, quedaremos komo idiotas frente al enemigo. ¡Asegúrense de gritar más fuerte antes de tirar los dados!`;
-                        } else if (faction === "Necrones") {
-                            report = `Eficiencia subóptima. El ${probKillOne.toFixed(1)}% de probabilidad de baja indica resistencia imprevista del objetivo ${target}. Con ${avgDmg} de daño esperado, es una pérdida de tiempo gauss, aunque aceptable si no hay mejores métricas de exterminio.`;
-                        } else if (faction === "Adeptus Astartes") {
-                            report = `Las probabilidades no son favorables: ${probKillOne.toFixed(1)}% de certeza de baja y ${avgDmg} de daño medio. Proceder con este ataque requiere fe ciega en el Emperador, pues el enemigo ${target} tiene altas posibilidades de resistir la embestida.`;
-                        } else {
-                            report = `Atención: El umbral de éxito se sitúa en un precario ${probKillOne.toFixed(1)}% (${avgDmg} de daño). Las probabilidades están en nuestra contra, por lo que el objetivo ${target} probablemente sobrevivirá para contraatacar. Procedan bajo su propio riesgo.`;
-                        }
+                        report = currentFactionObj.midLow;
                     } else if (probKillOne >= 50 && probKillOne < 75) {
-                        // BUEN RENDIMIENTO (50% - 75%)
-                        if (faction === "Orkos") {
-                        report = `¡A HIIIIJOS DE GORKO! ¡Tenemos un ${probKillOne.toFixed(1)}% de asegurar bajas! Con un promedio de ${avgDmg} de daño, el ${target} va a kantar victoria antes de tiempo. ¡Hasta ${maxKills} modelos pueden caer si los xikos se ponen violentos! ¡WAAAGH!`;
-                        } else if (faction === "Necrones") {
-                            report = `Parámetros favorables. Un ${probKillOne.toFixed(1)}% de probabilidad de aniquilación y ${avgDmg} de daño proyectado garantizan que los protocolos de desintegración harán su trabajo. El objetivo ${target} sufrirá una disociación molecular inminente.`;
-                        } else if (faction === "Adeptus Astartes") {
-                            report = `Excelente desempeño táctico. Con un ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} puntos de daño medio, nuestras armas purgarán al ${target} tal como fue ordenado. Máximo estimado de ${maxKills} bajas. Por el Emperador.`;
-                        } else {
-                            report = `Informe óptimo: El ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio respaldan este asalto. Las defensas del ${target} cederán bajo el peso de nuestra ofensiva coordinada.`;
-                        }
+                        report = currentFactionObj.midHigh;
                     } else {
-                        // DOMINIO ABSOLUTO (75% - 100%)
-                        if (faction === "Orkos") {
-                            report = `¡ESTO ES UNA MASACRE! ¡${probKillOne.toFixed(1)}% de probabilidad de destrozar al ${target}! ¡${avgDmg} de daño medio y hasta ${maxKills} bajas seguras! ¡Nadie sobrevive a esta paliza, xikos, zampémosles los dientes!`;
-                        } else if (faction === "Necrones") {
-                            report = `[EJECUCIÓN TOTAL]: Probabilidad del ${probKillOne.toFixed(1)}% de bajas. Daño medio destructivo de ${avgDmg}. El objetivo ${target} es completamente inferior; su existencia cesará de manera eficiente y absoluta bajo nuestro fuego.`;
-                        } else if (faction === "Adeptus Astartes") {
-                            report = `¡La ira del Capítulo es implacable! ${probKillOne.toFixed(1)}% de probabilidad de aniquilación total y ${avgDmg} de daño medio. El ${target} será barrido de la faz del planeta sin dejar rastro. ¡Gloria al Imperio!`;
-                        } else {
-                            report = `Supremacía absoluta confirmada: El ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño esperado garantizan la destrucción total del ${target}. Ejecuten la orden de ataque sin piedad.`;
-                        }
+                        report = currentFactionObj.high;
                     }
 
                     setAiReport(report);
