@@ -288,56 +288,34 @@
                 return () => clearTimeout(timer);
             }, [params]);
 
-            const generateTacticalAnalysis = async () => {
+            const generateTacticalAnalysis = () => {
                 setIsGeneratingAI(true);
                 setAiReport("");
-                
-                const probKillOne = (simResults.cumulativeKillsData.find(d => d.killed === 1)?.cumProb || 0) * 100;
-                const maxKills = Math.max(...simResults.killsData.filter(d => d.prob > 0).map(d => d.killed));
 
-                const prompt = `
-                    Asume el rol de un líder, comandante o entidad superior de la facción '${params.attacker_faction}' en el oscuro universo de Warhammer 40,000. 
-                    Vas a evaluar un asalto táctico contra la facción enemiga '${params.defender_faction}'.
-                    Analiza los siguientes resultados de una simulación de combate y proporciona un reporte táctico breve (máximo 2 párrafos).
-                    
-                    Contexto del Asalto: "${params.n_models} ${params.attacker_name}" (Tus fuerzas) vs "${params.defender_name}" (Fuerzas enemigas de la facción ${params.defender_faction}).
-                    Fuerza Atacante: ${params.n_models} ${params.attacker_name}, efectuando ${params.attacks_per_model} ataques por modelo con Daño ${params.damage} y AP -${Math.abs(params.ap || 0)}.
-                    Objetivo Enemigo: ${params.defender_name} (Heridas por modelo ${params.target_wounds}, Salvación base ${params.save_target}+, Invulnerable ${params.invuln_target}+, Feel No Pain ${params.fnp_target}+).
-                    
-                    Resultados de las simulaciones tácticas (50,000 iteraciones):
-                    - Daño promedio infligido: ${simResults.avgDamage.toFixed(2)} puntos.
-                    - Probabilidad de exterminar al menos 1 modelo enemigo: ${probKillOne.toFixed(1)}%.
-                    - Bajas máximas posibles en un escenario óptimo: ${maxKills} modelos.
-                    
-                    Instrucciones: Evalúa si vale la pena el esfuerzo de este ataque contra el objetivo específico basándote en la probabilidad de éxito. Menciona los riesgos tácticos de que el objetivo sobreviva. 
-                    CRÍTICO: Tu tono, vocabulario y actitud DEBEN corresponder estrictamente al lore de la facción '${params.attacker_faction}'. No uses saludos cordiales, mantén la atmósfera absolutamente 'grimdark' y responde en español.
-                `;
+                setTimeout(() => {
+                    const probKillOne = (simResults.cumulativeKillsData.find(d => d.killed === 1)?.cumProb || 0) * 100;
+                    const maxKills = Math.max(...simResults.killsData.filter(d => d.prob > 0).map(d => d.killed));
+                    const avgDmg = simResults.avgDamage.toFixed(2);
 
-                try {
-                    const apiKey = ""; 
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                    
-                    const payload = {
-                        contents: [{ parts: [{ text: prompt }] }],
-                        systemInstruction: {
-                            parts: [{ text: `Eres la mente maestra táctica de la facción ${params.attacker_faction} en Warhammer 40k. Das respuestas estratégicas, inmersivas, y narrativas en español.` }]
-                        }
-                    };
+                    let report = "";
+                    const faction = params.attacker_faction;
+                    const target = params.defender_name;
 
-                    const response = await fetch(apiUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
+                    if (faction === "Orkos") {
+                        report = `¡WAAAGH! Analizando las estadísticas para reventar al ${target}, ¡mis xikos registran un daño medio de ${avgDmg}! Tenemos un ${probKillOne.toFixed(1)}% de probabilidad de asegurar al menos una buena baja. ¡Si nos sonríe Gorko (o Morko), podríamos tumbar hasta ${maxKills} modelos en un asalto brutal! ¡A por ellos!`;
+                    } else if (faction === "Necrones") {
+                        report = `Los protocolos de cálculo auspex confirman una proyección de ${avgDmg} puntos de daño sobre el objetivo ${target}. La probabilidad de aniquilación se calcula en un ${probKillOne.toFixed(1)}%. Ninguna forma de vida inferior resistirá la marcha implacable de las dinastías. Destrucción óptima estimada de hasta ${maxKills} objetivos.`;
+                    } else if (faction === "Adeptus Astartes") {
+                        report = `Informe táctico para el Capítulo: El fuego concentrado sobre el ${target} proyecta un daño medio de ${avgDmg}. Con una probabilidad del ${probKillOne.toFixed(1)}% de neutralizar la primera línea enemiga, el Emperador guía nuestras armas. Mantened la formación y purging con fuego sagrado; el rendimiento máximo esperado alcanza ${maxKills} bajas.`;
+                    } else if (faction === "Tiránidos") {
+                        report = `[Análisis de la Mente Enjambre]: Biomasa estimada a recolectar del objetivo ${target}: ${avgDmg} daño medio. Eficacia de depredación del ${probKillOne.toFixed(1)}%. Los organismos de asalto están listos para despezar las defensas enemigas. Cosecha máxima proyectada: ${maxKills} entidades. Adaptarse y consumir.`;
+                    } else {
+                        report = `Reporte táctico de combate contra ${target}: Daño medio calculado en ${avgDmg} con una probabilidad de éxito del ${probKillOne.toFixed(1)}% para el primer objetivo. Las proyecciones indican un rendimiento óptimo de hasta ${maxKills} bajas en condiciones favorables de asalto. Procedan con la estrategia asignada.`;
+                    }
 
-                    const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    setAiReport(text || "No se pudo generar el reporte táctico.");
-                } catch (error) {
-                    setAiReport("Error en los sistemas de comunicación (API Falló). El tecnosacerdote ha sido ejecutado.");
-                } finally {
+                    setAiReport(report);
                     setIsGeneratingAI(false);
-                }
+                }, 600);
             };
 
             if (!simResults) return <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center font-mono">Cargando Motores de Lógica...</div>;
