@@ -296,21 +296,56 @@
                     const probKillOne = (simResults.cumulativeKillsData.find(d => d.killed === 1)?.cumProb || 0) * 100;
                     const maxKills = Math.max(...simResults.killsData.filter(d => d.prob > 0).map(d => d.killed));
                     const avgDmg = simResults.avgDamage.toFixed(2);
-
-                    let report = "";
                     const faction = params.attacker_faction;
                     const target = params.defender_name;
 
-                    if (faction === "Orkos") {
-                        report = `¡WAAAGH! Analizando las estadísticas para reventar al ${target}, ¡mis xikos registran un daño medio de ${avgDmg}! Tenemos un ${probKillOne.toFixed(1)}% de probabilidad de asegurar al menos una buena baja. ¡Si nos sonríe Gorko (o Morko), podríamos tumbar hasta ${maxKills} modelos en un asalto brutal! ¡A por ellos!`;
-                    } else if (faction === "Necrones") {
-                        report = `Los protocolos de cálculo auspex confirman una proyección de ${avgDmg} puntos de daño sobre el objetivo ${target}. La probabilidad de aniquilación se calcula en un ${probKillOne.toFixed(1)}%. Ninguna forma de vida inferior resistirá la marcha implacable de las dinastías. Destrucción óptima estimada de hasta ${maxKills} objetivos.`;
-                    } else if (faction === "Adeptus Astartes") {
-                        report = `Informe táctico para el Capítulo: El fuego concentrado sobre el ${target} proyecta un daño medio de ${avgDmg}. Con una probabilidad del ${probKillOne.toFixed(1)}% de neutralizar la primera línea enemiga, el Emperador guía nuestras armas. Mantened la formación y purging con fuego sagrado; el rendimiento máximo esperado alcanza ${maxKills} bajas.`;
-                    } else if (faction === "Tiránidos") {
-                        report = `[Análisis de la Mente Enjambre]: Biomasa estimada a recolectar del objetivo ${target}: ${avgDmg} daño medio. Eficacia de depredación del ${probKillOne.toFixed(1)}%. Los organismos de asalto están listos para despezar las defensas enemigas. Cosecha máxima proyectada: ${maxKills} entidades. Adaptarse y consumir.`;
+                    let report = "";
+
+                    // 4 Frases basadas en percentiles (0-25, 25-50, 50-75, 75-100)
+                    if (probKillOne < 25) {
+                        // REPRIMIENDA TOTAL (< 25%)
+                        if (faction === "Orkos") {
+                            report = `¡PULGARES ABAJO, XIKOS! ¿ ${probKillOne.toFixed(1)}% de probabilidad de matar algo? ¡Hasta un Gretchin kon catarro pega más fuerte! Nos da un miserable daño medio de ${avgDmg}. ¡El Kaudillo los va a hacer puré por pensar en un ataque tan penoso! ¡Busco otro objetivo o a korrer!`;
+                        } else if (faction === "Necrones") {
+                            report = `[ALERTA DE INCOMPETENCIA]: Una probabilidad de éxito del ${probKillOne.toFixed(1)}% es un insulto a las Dinastías Silentes. Daño medio de ${avgDmg}. Sus engramas están tan oxidados que dan lástima; este subsector entero debería ser desintegrado por la vergüenza de su cálculo táctico.`;
+                        } else if (faction === "Adeptus Astartes") {
+                            report = `¡Deshonra para el Capítulo! Con un escaso ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} de daño medio, este asalto es un absoluto despropósito táctico. El primarca lloraría al ver semejante flaqueza en el bolter. Reorganicen la línea de fuego de inmediato.`;
+                        } else {
+                            report = `[REPRIMIENDA TÁCTICA]: Operación inviable. La probabilidad de eliminar al menos un modelo es de apenas un ${probKillOne.toFixed(1)}% (${avgDmg} daño medio). Enviar a estas tropas es un desperdicio de recursos bélicos imperdonable. Aborten el ataque.`;
+                        }
+                    } else if (probKillOne >= 25 && probKillOne < 50) {
+                        // ADVERTENCIA / RIESGO MODERADO-BAJO (25% - 50%)
+                        if (faction === "Orkos") {
+                            report = `Mmh... un ${probKillOne.toFixed(1)}% de que kaiga al menos uno. Con ${avgDmg} de daño promedio, es una apuesta arriesgada. Si la suerte nos acompaña, rompemos algo; si no, quedaremos komo idiotas frente al enemigo. ¡Asegúrense de gritar más fuerte antes de tirar los dados!`;
+                        } else if (faction === "Necrones") {
+                            report = `Eficiencia subóptima. El ${probKillOne.toFixed(1)}% de probabilidad de baja indica resistencia imprevista del objetivo ${target}. Con ${avgDmg} de daño esperado, es una pérdida de tiempo gauss, aunque aceptable si no hay mejores métricas de exterminio.`;
+                        } else if (faction === "Adeptus Astartes") {
+                            report = `Las probabilidades no son favorables: ${probKillOne.toFixed(1)}% de certeza de baja y ${avgDmg} de daño medio. Proceder con este ataque requiere fe ciega en el Emperador, pues el enemigo ${target} tiene altas posibilidades de resistir la embestida.`;
+                        } else {
+                            report = `Atención: El umbral de éxito se sitúa en un precario ${probKillOne.toFixed(1)}% (${avgDmg} de daño). Las probabilidades están en nuestra contra, por lo que el objetivo ${target} probablemente sobrevivirá para contraatacar. Procedan bajo su propio riesgo.`;
+                        }
+                    } else if (probKillOne >= 50 && probKillOne < 75) {
+                        // BUEN RENDIMIENTO (50% - 75%)
+                        if (faction === "Orkos") {
+                        report = `¡A HIIIIJOS DE GORKO! ¡Tenemos un ${probKillOne.toFixed(1)}% de asegurar bajas! Con un promedio de ${avgDmg} de daño, el ${target} va a kantar victoria antes de tiempo. ¡Hasta ${maxKills} modelos pueden caer si los xikos se ponen violentos! ¡WAAAGH!`;
+                        } else if (faction === "Necrones") {
+                            report = `Parámetros favorables. Un ${probKillOne.toFixed(1)}% de probabilidad de aniquilación y ${avgDmg} de daño proyectado garantizan que los protocolos de desintegración harán su trabajo. El objetivo ${target} sufrirá una disociación molecular inminente.`;
+                        } else if (faction === "Adeptus Astartes") {
+                            report = `Excelente desempeño táctico. Con un ${probKillOne.toFixed(1)}% de probabilidad de éxito y ${avgDmg} puntos de daño medio, nuestras armas purgarán al ${target} tal como fue ordenado. Máximo estimado de ${maxKills} bajas. Por el Emperador.`;
+                        } else {
+                            report = `Informe óptimo: El ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño medio respaldan este asalto. Las defensas del ${target} cederán bajo el peso de nuestra ofensiva coordinada.`;
+                        }
                     } else {
-                        report = `Reporte táctico de combate contra ${target}: Daño medio calculado en ${avgDmg} con una probabilidad de éxito del ${probKillOne.toFixed(1)}% para el primer objetivo. Las proyecciones indican un rendimiento óptimo de hasta ${maxKills} bajas en condiciones favorables de asalto. Procedan con la estrategia asignada.`;
+                        // DOMINIO ABSOLUTO (75% - 100%)
+                        if (faction === "Orkos") {
+                            report = `¡ESTO ES UNA MASACRE! ¡${probKillOne.toFixed(1)}% de probabilidad de destrozar al ${target}! ¡${avgDmg} de daño medio y hasta ${maxKills} bajas seguras! ¡Nadie sobrevive a esta paliza, xikos, zampémosles los dientes!`;
+                        } else if (faction === "Necrones") {
+                            report = `[EJECUCIÓN TOTAL]: Probabilidad del ${probKillOne.toFixed(1)}% de bajas. Daño medio destructivo de ${avgDmg}. El objetivo ${target} es completamente inferior; su existencia cesará de manera eficiente y absoluta bajo nuestro fuego.`;
+                        } else if (faction === "Adeptus Astartes") {
+                            report = `¡La ira del Capítulo es implacable! ${probKillOne.toFixed(1)}% de probabilidad de aniquilación total y ${avgDmg} de daño medio. El ${target} será barrido de la faz del planeta sin dejar rastro. ¡Gloria al Imperio!`;
+                        } else {
+                            report = `Supremacía absoluta confirmada: El ${probKillOne.toFixed(1)}% de probabilidad de baja y ${avgDmg} de daño esperado garantizan la destrucción total del ${target}. Ejecuten la orden de ataque sin piedad.`;
+                        }
                     }
 
                     setAiReport(report);
